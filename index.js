@@ -4,27 +4,30 @@ const hasFlag = require('has-flag');
 
 const {env} = process;
 
-let forceColor;
+let flagForceColor;
 if (hasFlag('no-color') ||
 	hasFlag('no-colors') ||
 	hasFlag('color=false') ||
 	hasFlag('color=never')) {
-	forceColor = 0;
+	flagForceColor = 0;
 } else if (hasFlag('color') ||
 	hasFlag('colors') ||
 	hasFlag('color=true') ||
 	hasFlag('color=always')) {
-	forceColor = 1;
+	flagForceColor = 1;
 }
 
+let noflagForceColor;
 if ('FORCE_COLOR' in env) {
 	if (env.FORCE_COLOR === 'true') {
-		forceColor = 1;
+		noflagForceColor = 1;
 	} else if (env.FORCE_COLOR === 'false') {
-		forceColor = 0;
+		noflagForceColor = 0;
 	} else {
-		forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+		noflagForceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
 	}
+
+	flagForceColor = noflagForceColor;
 }
 
 function translateLevel(level) {
@@ -40,19 +43,23 @@ function translateLevel(level) {
 	};
 }
 
-function supportsColor(stream) {
+function supportsColor(stream, {sniffFlags = true} = {}) {
+	const forceColor = sniffFlags ? flagForceColor : noflagForceColor;
+
 	if (forceColor === 0) {
 		return 0;
 	}
 
-	if (hasFlag('color=16m') ||
-		hasFlag('color=full') ||
-		hasFlag('color=truecolor')) {
-		return 3;
-	}
+	if (sniffFlags) {
+		if (hasFlag('color=16m') ||
+			hasFlag('color=full') ||
+			hasFlag('color=truecolor')) {
+			return 3;
+		}
 
-	if (hasFlag('color=256')) {
-		return 2;
+		if (hasFlag('color=256')) {
+			return 2;
+		}
 	}
 
 	if (stream && !stream.isTTY && forceColor === undefined) {
@@ -122,8 +129,8 @@ function supportsColor(stream) {
 	return min;
 }
 
-function getSupportLevel(stream) {
-	const level = supportsColor(stream);
+function getSupportLevel(stream, opts) {
+	const level = supportsColor(stream, opts);
 	return translateLevel(level);
 }
 
