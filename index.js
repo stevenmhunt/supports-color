@@ -28,6 +28,10 @@ if ('FORCE_COLOR' in env) {
 	}
 }
 
+if (Boolean(env.NO_COLOR)) {
+	forceColor = 0;
+}
+
 function translateLevel(level) {
 	if (level === 0) {
 		return false;
